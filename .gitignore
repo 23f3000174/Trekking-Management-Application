@@ -1,3 +1,5 @@
-backend/.env
+.env
 instance
 instance/*
+__pycache__
+*.pyc

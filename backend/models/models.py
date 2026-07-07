@@ -6,37 +6,37 @@ import bcrypt
 db = SQLAlchemy()
 
 class UserRole(enum.Enum):
-    ADMIN   = 'admin'
-    STAFF   = 'staff'
+    ADMIN = 'admin'
+    STAFF = 'staff'
     TREKKER = 'trekker'
 
 class UserStatus(enum.Enum):
-    ACTIVE      = 'active'
-    INACTIVE    = 'inactive'
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
     BLACKLISTED = 'blacklisted'
 
 class Gender(enum.Enum):
-    MALE            = 'Male'
-    FEMALE          = 'Female'
-    OTHER           = 'Other'
-    PREFER_NOT      = 'Prefer not to say'
+    MALE = 'male'
+    FEMALE = 'female'
+    OTHER = 'other'
+    PREFER_NOT = 'prefer not to say'
 
 class Difficulty(enum.Enum):
-    EASY     = 'Easy'
-    MODERATE = 'Moderate'
-    HARD     = 'Hard'
+    EASY = 'easy'
+    MODERATE = 'moderate'
+    HARD = 'hard'
 
 class TrekStatus(enum.Enum):
-    PENDING   = 'Pending'
-    APPROVED  = 'Approved'
-    OPEN      = 'Open'
-    CLOSED    = 'Closed'
-    COMPLETED = 'Completed'
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    OPEN = 'open'
+    CLOSED = 'closed'
+    COMPLETED = 'completed'
 
 class BookingStatus(enum.Enum):
-    BOOKED    = 'Booked'
-    CANCELLED = 'Cancelled'
-    COMPLETED = 'Completed'
+    BOOKED = 'booked'
+    CANCELLED = 'cancelled'
+    COMPLETED = 'completed'
 
 
 
@@ -45,7 +45,7 @@ class User(db.Model):
     full_name =  db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    mobile_no = db.Column(db.String(15), unique=True)
+    mobile_no = db.Column(db.String(15), unique=True, nullable=False)
 
     def set_password(self, password):
         password_bytes = password.encode('utf-8')
@@ -93,7 +93,7 @@ class Staff(db.Model):
 class Trekker(db.Model):
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     dob = db.Column(db.Date, nullable=False)
-    gender = db.Column(db.Enum(Gender))
+    gender = db.Column(db.Enum(Gender), nullable=False)
     emergency_contact = db.Column(db.String(15))
 
     user = db.relationship('User',

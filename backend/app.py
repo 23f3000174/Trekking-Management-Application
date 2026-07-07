@@ -1,17 +1,20 @@
 from flask import Flask
 from models.models import db, UserRole, User
+from routes import auth_bp
+from flask_jwt_extended import JWTManager
+
 
 def create_app():
     app = Flask(__name__)
-
+    
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///tma.db"
     app.config['SECRET_KEY'] = 'phull_sequrity'
     db.init_app(app)
     
-
-    @app.route('/')
-    def index():
-        return "<h1>Hello from app.py</h1>"
+    app.config["JWT_SECRET_KEY"] = "PHULL_SEQURITY"
+    jwt = JWTManager(app)
+    
+    app.register_blueprint(auth_bp)
 
     with app.app_context():
         db.create_all()
@@ -24,6 +27,7 @@ def create_admin():
         admin_user = User(
                 full_name = "ADMIN",
                 email= "admin@admin.com",
+                mobile_no = "xxx",
                 role = UserRole.ADMIN
                 )
         admin_user.set_password('admin@123')
