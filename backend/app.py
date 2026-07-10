@@ -2,11 +2,15 @@ from flask import Flask
 from models.models import db, UserRole, User
 from routes import auth_bp
 from flask_jwt_extended import JWTManager
+from flask_cors import CORS
 
 
 def create_app():
     app = Flask(__name__)
-    
+
+    CORS(app)
+
+
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///tma.db"
     app.config['SECRET_KEY'] = 'phull_sequrity'
     db.init_app(app)

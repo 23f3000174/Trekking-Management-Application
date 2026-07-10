@@ -1,7 +1,8 @@
 from flask import request
 from flask_restful import Resource
 from models.models import db, User, UserRole, Trekker, Gender
-
+from flask_jwt_extended import create_access_token
+from datetime import datetime
 class Register(Resource):
     def post(self):
         data = request.get_json()
@@ -18,28 +19,35 @@ class Register(Resource):
                         role = UserRole.TREKKER
                         )
         new_user.set_password(data['password'])
-        
+       
+        dob_str = data.get('dob')
+        parsed_dob = datetime.strptime(dob_str, "%Y-%m-%d").date()
         try:
-            check_gender = data['gender'].lower()
+            print(data['dob'])
+            check_gender = data['gender']
             valid_gender = Gender(check_gender)
-            new_trekker = Trekker(dob = data['dob'],
+            new_trekker = Trekker(dob = parsed_dob,
                                   gender = valid_gender,
                                   emergency_contact = data['emergency_contact'])
             
             new_user.trekker_profile = new_trekker
         except:
-            return {'message' : 'Invalid gender, Choose one of these: male, female, other, prefer not to say'}, 400
-
+            return {'message' : 'Invalid gendere....'}, 400
+        
+        print('before commit')
         db.session.add(new_user)
+        print('after addint user')
         db.session.add(new_trekker)
+        print('after adding trekker')
         db.session.commit()
+        print('after commit')
 
         return {'message' : 'Trekker registered sucessfully'}, 201
 
 class Login(Resource):
     def post(self):
         data = request.get_json()
-
+        print(data)
         if not data or not data.get('email') or not data.get('password'):
             return {'message': 'Email and password required'}, 400
 
@@ -48,12 +56,12 @@ class Login(Resource):
         if not user or not user.check_password(data.get('password')):
             return {'message' : 'Invalid credentials'}, 401
         
-        if user.flag.value == 'blacklisted':
+        if user.flag == 'blacklisted':
             return {'message' : 'Account blacklisted'}, 403
     
         access_token = create_access_token(
                                 identity = user.id,
-                                role_claims = user.role.value
+                                additional_claims= {'role' : user.role.value}
                             )
 
         return {'message' : 'Login sucessfully',
