@@ -80,8 +80,6 @@ class Staff(db.Model):
     id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     contact = db.Column(db.String(15))
     bio = db.Column(db.Text)
-    status= db.Column(db.Boolean, nullable=False, default=True)
-
     user = db.relationship('User',
                            back_populates='staff_profile')
 
@@ -137,7 +135,7 @@ class Booking(db.Model):
     booking_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     booking_status = db.Column(db.Enum(BookingStatus), nullable=False, default=BookingStatus.BOOKED)
     
-    cancellation_date = db.Column(db.DateTime)
+    cancellation_date = db.Column(db.DateTime, default=None)
 
     user = db.relationship('User',
                            back_populates='bookings',
