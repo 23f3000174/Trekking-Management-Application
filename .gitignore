@@ -1,10 +1,10 @@
 .env/
 
-__pycache__/
+__pycache__
 *.py[cod]
 *.pyo
 *.pyd
-
+*.pyc
 
 instance/
 

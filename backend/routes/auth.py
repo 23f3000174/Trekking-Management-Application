@@ -56,11 +56,12 @@ class Login(Resource):
         if not user or not user.check_password(data.get('password')):
             return {'message' : 'Invalid credentials'}, 401
         
-        if user.flag == 'blacklisted':
+        from models.models import UserStatus
+        if user.flag == UserStatus.BLACKLISTED:
             return {'message' : 'Account blacklisted'}, 403
     
         access_token = create_access_token(
-                                identity = user.id,
+                                identity = str(user.id),
                                 additional_claims= {'role' : user.role.value}
                             )
 

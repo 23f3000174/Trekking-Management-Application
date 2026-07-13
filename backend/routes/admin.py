@@ -1,7 +1,8 @@
 from flask import request
+# pyrefly: ignore [missing-import]
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt
-from ..models.models import db, User, Staff, Trekker, Trek, Booking, UserRole, UserStatus, Difficulty, TrekStatus 
+from models.models import db, User, Staff, Trekker, Trek, Booking, UserRole, UserStatus, Difficulty, TrekStatus 
 from datetime import datetime
 
 def admin():
@@ -15,13 +16,13 @@ class Dashboard(Resource):
         if not admin():
             return {'message' : 'Unauthorized'}, 403
         
-        return{
-                'total_staff' : Staff.query.count(),
-                'total_trek' : Trek.query.count(),
-                'active_trek' : Trek.query.filter(Trek.trek_status==TrekStatus.OPEN),
-                'total_trekker' : Trekker.query.count(),
-                'total_booking' : Booking.query.count()
-                }, 200
+        return {
+            'total_staff'    : Staff.query.count(),
+            'total_treks'    : Trek.query.count(),
+            'active_treks'   : Trek.query.filter(Trek.trek_status == TrekStatus.OPEN).count(),
+            'total_trekkers' : Trekker.query.count(),
+            'total_bookings' : Booking.query.count()
+        }, 200
 
 # ==================================================================================================
 
@@ -35,13 +36,13 @@ class StaffList(Resource):
         result = []
         for s in staff:
             result.append({
-                'id' : s.id,
-                'staff_name' : s.user.full_name,
-                'email' : s.user.email,
+                'id'        : s.id,
+                'full_name' : s.user.full_name,
+                'email'     : s.user.email,
                 'mobile_no' : s.user.mobile_no,
-                'flag' : s.user.flag.value,
-                })
-        return result, 200 
+                'flag'      : s.user.flag.value,
+            })
+        return result, 200
 # ------------------------------------------------------------------------------------------------- 
 
     @jwt_required()
@@ -87,7 +88,7 @@ class StaffDetail(Resource):
             return {'message': 'Staff not found'}, 404
         
         assigned = []
-        for trek in staff.assined_treks:
+        for trek in staff.assigned_treks:
             assigned.append({
                 'trek_id' : trek.id,
                 'trek_name' : trek.trek_name,
@@ -159,17 +160,17 @@ class TrackList(Resource):
         result = []
         for trek in treks:
             result.append({
-                'id' : trek.id,
-                'trek_name' : trek.trek_name,
+                'id'            : trek.id,
+                'trek_name'     : trek.trek_name,
                 'trek_location' : trek.trek_location,
-                'status' : trek.trek_status.value,
-                'difficulty' : trek.difficulty.value,
-                'available_slots' : trek.available_slot,
-                'total_slot' : trek.total_slot,
-                'start_date' : str(trek.start_date),
-                'end_date' : str(trek.end_date)
-                })
-        return result , 200
+                'trek_status'   : trek.trek_status.value,
+                'difficulty'    : trek.difficulty.value,
+                'available_slot': trek.available_slot,
+                'total_slot'    : trek.total_slot,
+                'start_date'    : str(trek.start_date),
+                'end_date'      : str(trek.end_date),
+            })
+        return result, 200
 
 # ------------------------------------------------------------------------------------------------- 
     @jwt_required()
@@ -199,15 +200,16 @@ class TrackList(Resource):
         duration_days = (end - start).days
 
         new_trek = Trek(
-                trek_name = data['trek_name'],
-                trek_location = data['trek_location'],
-                description = data['description'],
-                difficulty = valid_difficulty, 
-                duration_days = duration_days, 
-                total_slot = data['total_slot'],
-                available_slot = data['total_slot'],
-                start_date = start,
-                end_date = end)
+            trek_name      = data['trek_name'],
+            trek_location  = data['trek_location'],
+            description    = data.get('description'),
+            difficulty     = valid_difficulty,
+            duration_days  = duration_days,
+            total_slot     = data['total_slot'],
+            available_slot = data['total_slot'],
+            start_date     = start,
+            end_date       = end,
+        )
         
         db.session.add(new_trek)
         db.session.commit()
@@ -275,7 +277,7 @@ class TrackDetail(Resource):
             except ValueError:
                 return {'message' : 'Invalid difficulty'}, 400
 
-        if 'trek_status' in data['trek_status']:
+        if 'trek_status' in data:
             try:
                 trek.trek_status = TrekStatus(data['trek_status'])
             except ValueError:
@@ -336,11 +338,11 @@ class TrekkerList(Resource):
 
 class TrekkerDetail(Resource):  
     @jwt_required()
-    def get(self, user_id):
+    def get(self, trekker_id):
         if not admin():
             return {'message': 'Unauthorized'}, 403
         
-        trekker = Trekker.query.get(user_id)
+        trekker = Trekker.query.get(trekker_id)
         if not trekker:
             return {'message' : 'Trekker not found'}, 404
 
@@ -368,11 +370,11 @@ class TrekkerDetail(Resource):
 
 # ------------------------------------------------------------------------------------------------- 
     @jwt_required()
-    def put(self, user_id):
+    def put(self, trekker_id):
         if not admin():
             return {'message': 'Unauthorized'}, 403
         
-        user = User.query.get(user_id)
+        user = User.query.get(trekker_id)
         if not user or user.role != UserRole.TREKKER:
             return {'message' : 'Trekker not found'}, 404
 
@@ -390,11 +392,11 @@ class TrekkerDetail(Resource):
 
 # ------------------------------------------------------------------------------------------------- 
     @jwt_required()
-    def delete(self, user_id):
+    def delete(self, trekker_id):
         if not admin():
             return {'message': 'Unauthorized'}, 403
 
-        user = User.query.get(user_id)
+        user = User.query.get(trekker_id)
         if not user:
             return {'message' : 'User not found'}, 404
 

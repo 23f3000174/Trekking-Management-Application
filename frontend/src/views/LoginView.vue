@@ -19,9 +19,9 @@
        </button>
    </form>
 
-   <p v-if="errorMsg" sytle="color:red"> {{ errorMsg }}</p>
+   <p v-if="errorMsg" style="color:red"> {{ errorMsg }}</p>
 
-   <p>Created a new Account? <a herf="/register"> Register here</a></p>
+   <p>Created a new Account? <a href="/register"> Register here</a></p>
   </div>
 </template>
 
@@ -54,8 +54,13 @@ export default {
 
         localStorage.setItem('token', access_token)
         localStorage.setItem('role', role)
+        localStorage.setItem('full_name', response.data.full_name)
 
-        this.$router.push('/dashboard')
+        if (role === 'admin') {
+          this.$router.push('/admin/dashboard')
+        } else {
+          this.$router.push('/trekker/dashboard')
+        }
 
       } catch (error){
         this.errorMsg = error.response?.data?.message || 'Login failed'
