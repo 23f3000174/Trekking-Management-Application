@@ -13,6 +13,11 @@
             <router-link to="/admin/search">Search</router-link>
         </span>
 
+        <span v-if="role === 'staff'">
+            <router-link to="/staff/dashboard">Dashboard</router-link>
+            <router-link to="/staff/treks">My Treks</router-link>
+        </span>
+
         <span v-if="isLoggedIn" style="float:right;">
             <span>{{ username }}</span>
             <button @click="logout">Logout</button>
@@ -57,7 +62,7 @@ export default{
         goHome() {
             const roleRoutes = {
                 admin : '/admin/dashboard',
-                staff : 'staff/dashboard',
+                staff : '/staff/dashboard',
                 trekker: 'trekker/dashboard',
             }
             const destination = roleRoutes[this.role] || '/'

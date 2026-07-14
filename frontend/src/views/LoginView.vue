@@ -58,6 +58,8 @@ export default {
 
         if (role === 'admin') {
           this.$router.push('/admin/dashboard')
+        } else if (role === 'staff') {
+          this.$router.push('/staff/dashboard')
         } else {
           this.$router.push('/trekker/dashboard')
         }

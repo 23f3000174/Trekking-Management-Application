@@ -1,6 +1,6 @@
 from flask import Flask
 from models.models import db, UserRole, User
-from routes import auth_bp, admin_bp
+from routes import auth_bp, admin_bp, staff_bp
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 
@@ -20,6 +20,7 @@ def create_app():
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(staff_bp)
 
     with app.app_context():
         db.create_all()

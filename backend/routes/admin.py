@@ -292,6 +292,8 @@ class TrackDetail(Resource):
                 if not staff:
                     return {'message' : 'Staff not found'}, 404
                 trek.assigned_staff = staff.id
+                if trek.trek_status == TrekStatus.PENDING:
+                    trek.trek_status = TrekStatus.APPROVED
 
         db.session.commit()
         return {'message' : 'Trek updated'}, 200

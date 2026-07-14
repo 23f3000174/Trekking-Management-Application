@@ -1,8 +1,8 @@
 <template>
   <div class="page">
 
-    <button class="btn-back" @click="$router.push('/admin/treks')">
-      ← Back to Treks
+    <button class="btn-back" @click="$router.push('/staff/treks')">
+      ← Back to My Treks
     </button>
 
     <div v-if="loading" class="loading">Loading trek details...</div>
@@ -47,46 +47,24 @@
             <p>{{ formatDate(trek.end_date) }}</p>
           </div>
           <div class="info-item">
-            <label>Total Slots</label>
-            <p>{{ trek.total_slot }}</p>
+            <label>Booked</label>
+            <p>{{ trek.booked_count }}</p>
           </div>
           <div class="info-item">
             <label>Available Slots</label>
-            <p>{{ trek.available_slot }}</p>
+            <p>{{ trek.available_slot }} / {{ trek.total_slot }}</p>
           </div>
-        </div>
-
-        <div class="info-item staff-section">
-          <label>Assigned Staff</label>
-          <p v-if="!trek.assigned_staff">Not assigned yet</p>
-          <p v-else class="link" @click="$router.push(`/admin/staff/${trek.assigned_staff.id}`)">
-            {{ trek.assigned_staff.full_name }} — {{ trek.assigned_staff.email }}
-          </p>
         </div>
 
         <div class="card-actions">
           <button class="btn-secondary" @click="showEditForm = !showEditForm">
-            {{ showEditForm ? 'Cancel Edit' : '✏️ Edit' }}
-          </button>
-          <button class="btn-danger" @click="deleteTrek" :disabled="actionLoading">
-            🗑️ Delete
+            {{ showEditForm ? 'Cancel Edit' : '✏️ Edit Trek' }}
           </button>
         </div>
       </div>
 
       <div v-show="showEditForm" class="card edit-card">
-        <h3>Edit Trek</h3>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Trek Name</label>
-            <input v-model="editForm.trek_name" type="text" />
-          </div>
-          <div class="form-group">
-            <label>Location</label>
-            <input v-model="editForm.trek_location" type="text" />
-          </div>
-        </div>
+        <h3>Update Trek</h3>
 
         <div class="form-group">
           <label>Description</label>
@@ -95,17 +73,13 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label>Difficulty</label>
-            <select v-model="editForm.difficulty">
-              <option value="easy">Easy</option>
-              <option value="moderate">Moderate</option>
-              <option value="hard">Hard</option>
-            </select>
+            <label>Total Slots</label>
+            <input v-model.number="editForm.total_slot" type="number" min="0" />
+            <small class="hint">Cannot be less than currently booked ({{ trek.booked_count }}).</small>
           </div>
           <div class="form-group">
-            <label>Status</label>
+            <label>Trek Status</label>
             <select v-model="editForm.trek_status">
-              <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="open">Open</option>
               <option value="closed">Closed</option>
@@ -114,29 +88,68 @@
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Total Slots</label>
-            <input v-model.number="editForm.total_slot" type="number" min="1" />
-          </div>
-          <div class="form-group">
-            <label>Assign Staff</label>
-            <select v-model="editForm.assigned_staff_id">
-              <option :value="null">— Unassigned —</option>
-              <option v-for="s in staffOptions" :key="s.id" :value="s.id">
-                {{ s.full_name }} ({{ s.email }})
-              </option>
-            </select>
-            <small v-if="staffLoading" class="hint">Loading staff…</small>
-            <small v-else-if="staffOptions.length === 0" class="hint">No staff members exist yet.</small>
-          </div>
-        </div>
-
         <p v-if="updateMsg" class="success-msg">{{ updateMsg }}</p>
+        <p v-if="updateError" class="error-msg">{{ updateError }}</p>
 
         <button class="btn-primary" @click="updateTrek" :disabled="actionLoading">
           Save Changes
         </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title-row">
+          <h3>Registered Trekkers</h3>
+          <span class="count-badge">{{ participants.length }} total</span>
+        </div>
+
+        <div v-if="participants.length === 0" class="empty">
+          No trekkers registered for this trek yet.
+        </div>
+
+        <table v-else class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Trekker</th>
+              <th>Email</th>
+              <th>Mobile</th>
+              <th>Booked On</th>
+              <th>Booking Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in participants" :key="p.booking_id">
+              <td>{{ p.user_id }}</td>
+              <td>{{ p.full_name }}</td>
+              <td>{{ p.email }}</td>
+              <td>{{ p.mobile_no || '—' }}</td>
+              <td>{{ formatDate(p.booking_date) }}</td>
+              <td>
+                <span class="badge" :class="{
+                  'badge-booked': p.booking_status === 'booked',
+                  'badge-cancelled': p.booking_status === 'cancelled',
+                  'badge-completed': p.booking_status === 'completed'
+                }">
+                  {{ p.booking_status }}
+                </span>
+              </td>
+              <td>
+                <select
+                  v-model="statusDrafts[p.booking_id]"
+                  class="status-select"
+                  @change="onStatusChange(p)"
+                  :disabled="statusLoading === p.booking_id"
+                >
+                  <option value="">Update…</option>
+                  <option value="booked">Mark Booked</option>
+                  <option value="completed">Mark Completed</option>
+                  <option value="cancelled">Cancel Booking</option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
     </div>
@@ -144,57 +157,46 @@
 </template>
 
 <script>
-import api from '../../../api'
+import api from '../../api'
 
 export default {
-  name: 'TrekDetail',
+  name: 'StaffTrekDetail',
 
   data() {
     return {
       trek: {},
+      participants: [],
       loading: true,
       error: '',
       showEditForm: false,
       actionLoading: false,
       updateMsg: '',
-      staffOptions: [],
-      staffLoading: false,
+      updateError: '',
+      statusLoading: null,
+      statusDrafts: {},
       editForm: {
-        trek_name: '',
-        trek_location: '',
         description: '',
-        difficulty: '',
-        trek_status: '',
         total_slot: 0,
-        assigned_staff_id: null,
+        trek_status: '',
       },
     }
   },
 
   async mounted() {
     const id = this.$route.params.id
-    this.staffLoading = true
     try {
-      const [trekRes, staffRes] = await Promise.all([
-        api.get(`/admin/trek/${id}`),
-        api.get('/admin/staff_list').catch(() => ({ data: [] })),
-      ])
-      this.trek = trekRes.data
-      this.staffOptions = staffRes.data
+      const res = await api.get(`/staff/treks/${id}`)
+      this.trek = res.data
+      this.participants = res.data.participants || []
       this.editForm = {
-        trek_name: this.trek.trek_name,
-        trek_location: this.trek.trek_location,
-        description: this.trek.description,
-        difficulty: this.trek.difficulty,
-        trek_status: this.trek.trek_status,
+        description: this.trek.description || '',
         total_slot: this.trek.total_slot,
-        assigned_staff_id: this.trek.assigned_staff?.id || null,
+        trek_status: this.trek.trek_status,
       }
     } catch (e) {
       this.error = e.response?.data?.message || 'Failed to load trek'
     } finally {
       this.loading = false
-      this.staffLoading = false
     }
   },
 
@@ -210,31 +212,55 @@ export default {
 
     async updateTrek() {
       this.actionLoading = true
+      this.updateMsg = ''
+      this.updateError = ''
+      const payload = {
+        description: this.editForm.description,
+        total_slot: this.editForm.total_slot,
+        trek_status: this.editForm.trek_status,
+      }
       try {
-        await api.put(`/admin/trek/${this.trek.id}`, this.editForm)
-        this.trek.trek_name = this.editForm.trek_name
-        this.trek.trek_status = this.editForm.trek_status
+        const res = await api.put(`/staff/treks/${this.trek.id}`, payload)
+        this.trek.trek_status = res.data.trek_status
+        this.trek.total_slot = res.data.total_slot
+        this.trek.available_slot = res.data.available_slot
         this.updateMsg = 'Trek updated successfully!'
         setTimeout(() => {
           this.updateMsg = ''
           this.showEditForm = false
         }, 1500)
       } catch (e) {
-        this.error = e.response?.data?.message || 'Update failed'
+        this.updateError = e.response?.data?.message || 'Update failed'
       } finally {
         this.actionLoading = false
       }
     },
 
-    async deleteTrek() {
-      if (!confirm(`Delete "${this.trek.trek_name}"? This cannot be undone.`)) return
-      this.actionLoading = true
+    onStatusChange(participant) {
+      const newStatus = this.statusDrafts[participant.booking_id]
+      if (!newStatus || newStatus === participant.booking_status) {
+        return
+      }
+      this.updateBookingStatus(participant, newStatus)
+    },
+
+    async updateBookingStatus(participant, newStatus) {
+      this.statusLoading = participant.booking_id
       try {
-        await api.delete(`/admin/trek/${this.trek.id}`)
-        this.$router.push('/admin/treks')
+        const res = await api.put(`/staff/bookings/${participant.booking_id}`, {
+          booking_status: newStatus,
+        })
+        participant.booking_status = res.data.booking_status
+        if (res.data.available_slot !== undefined) {
+          this.trek.available_slot = res.data.available_slot
+        }
+        this.statusDrafts[participant.booking_id] = ''
       } catch (e) {
-        this.error = e.response?.data?.message || 'Delete failed'
-        this.actionLoading = false
+        this.error = e.response?.data?.message || 'Failed to update booking status'
+        this.statusDrafts[participant.booking_id] = ''
+        setTimeout(() => { this.error = '' }, 3000)
+      } finally {
+        this.statusLoading = null
       }
     },
   },
@@ -340,24 +366,36 @@ export default {
   text-transform: capitalize;
 }
 
-.staff-section {
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-  margin-bottom: 16px;
-}
-
-.link {
-  color: #2980b9;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
 .card-actions {
   display: flex;
   gap: 10px;
   padding-top: 16px;
   border-top: 1px solid #f0f0f0;
   flex-wrap: wrap;
+}
+
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.card-title-row h3 {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.count-badge {
+  background: #eef2f7;
+  color: #2c3e50;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .form-row {
@@ -410,11 +448,45 @@ export default {
   margin-top: 4px;
 }
 
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  color: #7f8c8d;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f8f8f8;
+  font-size: 0.9rem;
+}
+
+.status-select {
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  background: white;
+  cursor: pointer;
+}
+
+.status-select:focus {
+  outline: none;
+  border-color: #2c3e50;
+}
+
 .badge {
   display: inline-block;
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 12px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 600;
   text-transform: capitalize;
   flex-shrink: 0;
@@ -445,6 +517,21 @@ export default {
   color: #383d41;
 }
 
+.badge-booked {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.badge-cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.badge-completed {
+  background: #d4edda;
+  color: #155724;
+}
+
 .btn-primary {
   background: #2c3e50;
   color: white;
@@ -470,16 +557,6 @@ export default {
   font-size: 0.9rem;
 }
 
-.btn-danger {
-  background: #e74c3c;
-  color: white;
-  border: none;
-  padding: 9px 18px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -499,6 +576,14 @@ button:disabled {
   padding: 10px 16px;
   border-radius: 6px;
   border-left: 4px solid #e74c3c;
+  margin-bottom: 12px;
+}
+
+.empty {
+  color: #7f8c8d;
+  font-size: 0.95rem;
+  padding: 20px 0;
+  text-align: center;
 }
 
 .loading {

@@ -199,7 +199,7 @@ export default {
         await api.put(`/admin/staff/${this.staff.id}`, { flag: newFlag })
         this.staff.flag = newFlag
       } catch (e) {
-        this.error = 'Action failed'
+        this.error = e.response?.data?.message || 'Action failed'
       } finally {
         this.actionLoading = false
       }
@@ -212,7 +212,7 @@ export default {
         await api.delete(`/admin/staff/${this.staff.id}`)
         this.$router.push('/admin/staff')
       } catch (e) {
-        this.error = 'Delete failed'
+        this.error = e.response?.data?.message || 'Delete failed'
         this.actionLoading = false
       }
     },

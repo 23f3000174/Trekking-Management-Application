@@ -21,6 +21,10 @@ import TrekCreate from '../views/admin/treks/TrekCreate.vue'
 import BookingList from '../views/admin/bookings/BookingList.vue'
 import BookingDetail from '../views/admin/bookings/BookingDetail.vue'
 
+import StaffDashboard from '../views/staff/StaffDashboard.vue'
+import StaffTrekList from '../views/staff/StaffTrekList.vue'
+import StaffTrekDetail from '../views/staff/StaffTrekDetail.vue'
+
 const routes = [
   { path: '/', name: 'Home', component: HomeView },
   { path: '/register', name: 'Register', component: RegisterView },
@@ -42,6 +46,10 @@ const routes = [
 
   { path: '/admin/bookings', name: 'BookingList', component: BookingList },
   { path: '/admin/bookings/:id', name: 'BookingDetail', component: BookingDetail },
+
+  { path: '/staff/dashboard', name: 'StaffDashboard', component: StaffDashboard },
+  { path: '/staff/treks', name: 'StaffTrekList', component: StaffTrekList },
+  { path: '/staff/treks/:id', name: 'StaffTrekDetail', component: StaffTrekDetail },
 ]
 
 const router = createRouter({
