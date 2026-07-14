@@ -5,18 +5,22 @@ from flask_cors import CORS
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 staff_bp = Blueprint('staff', __name__, url_prefix='/api/staff')
+trekker_bp = Blueprint('trekker', __name__, url_prefix='/api/trekker')
 
 CORS(auth_bp)
 CORS(admin_bp)
 CORS(staff_bp)
+CORS(trekker_bp)
 
 auth_api = Api(auth_bp)
 admin_api = Api(admin_bp)
 staff_api = Api(staff_bp)
+trekker_api = Api(trekker_bp)
 
 from .auth import Register, Login
 from .admin import Dashboard, StaffList, StaffDetail, TrackList, TrackDetail, TrekkerList, TrekkerDetail, BookingList, BookingDetail, Search
 from .staff import StaffDashboard, StaffTrekList, StaffTrekDetail, StaffTrekParticipants, StaffBookingStatus
+from .trekker import TrekkerDashboard, TrekkerTrekList, TrekkerTrekDetail, TrekkerBooking, TrekkerBookingList, TrekkerBookingDetail, TrekkerProfile
 
 auth_api.add_resource(Register, '/register')
 auth_api.add_resource(Login, '/login')
@@ -37,3 +41,11 @@ staff_api.add_resource(StaffTrekList, '/treks')
 staff_api.add_resource(StaffTrekDetail, '/treks/<int:trek_id>')
 staff_api.add_resource(StaffTrekParticipants, '/treks/<int:trek_id>/participants')
 staff_api.add_resource(StaffBookingStatus, '/bookings/<int:booking_id>')
+
+trekker_api.add_resource(TrekkerDashboard, '/dashboard')
+trekker_api.add_resource(TrekkerTrekList, '/treks')
+trekker_api.add_resource(TrekkerTrekDetail, '/treks/<int:trek_id>')
+trekker_api.add_resource(TrekkerBooking, '/bookings/<int:trek_id>')
+trekker_api.add_resource(TrekkerBookingList, '/bookings')
+trekker_api.add_resource(TrekkerBookingDetail, '/bookings/<int:booking_id>')
+trekker_api.add_resource(TrekkerProfile, '/profile')

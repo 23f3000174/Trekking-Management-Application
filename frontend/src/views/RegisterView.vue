@@ -54,7 +54,7 @@
     <p v-if="errorMsg" style="color:red"> {{ errorMsg }}</p>
     <p v-if="successMsg" style="color:green"> {{ successMsg }}</p>
 
-    <p>Already have an account? <a herf="/login">Login here</a></p>
+    <p>Already have an account? <a href="/login">Login here</a></p>
   </div>
 </template>
 

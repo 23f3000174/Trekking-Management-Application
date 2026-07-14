@@ -13,6 +13,13 @@
             <router-link to="/admin/search">Search</router-link>
         </span>
 
+        <span v-if="role === 'trekker'">
+            <router-link to="/trekker/dashboard">Dashboard</router-link>
+            <router-link to="/trekker/treks">Browse Treks</router-link>
+            <router-link to="/trekker/bookings">My Bookings</router-link>
+            <router-link to="/trekker/profile">Profile</router-link>
+        </span>
+
         <span v-if="role === 'staff'">
             <router-link to="/staff/dashboard">Dashboard</router-link>
             <router-link to="/staff/treks">My Treks</router-link>
@@ -63,7 +70,7 @@ export default{
             const roleRoutes = {
                 admin : '/admin/dashboard',
                 staff : '/staff/dashboard',
-                trekker: 'trekker/dashboard',
+                trekker: '/trekker/dashboard',
             }
             const destination = roleRoutes[this.role] || '/'
             this.$router.push(destination)

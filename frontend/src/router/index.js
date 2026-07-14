@@ -25,6 +25,14 @@ import StaffDashboard from '../views/staff/StaffDashboard.vue'
 import StaffTrekList from '../views/staff/StaffTrekList.vue'
 import StaffTrekDetail from '../views/staff/StaffTrekDetail.vue'
 
+import TrekkerDashboard from '../views/trekker/TrekkerDashboard.vue'
+import TrekkerTrekList from '../views/trekker/TrekkerTrekList.vue'
+import TrekkerTrekDetail from '../views/trekker/TrekkerTrekDetail.vue'
+import TrekkerBookings from '../views/trekker/TrekkerBookings.vue'
+import TrekkerBookingDetail from '../views/trekker/TrekkerBookingDetail.vue'
+import TrekkerProfile from '../views/trekker/TrekkerProfile.vue'
+
+
 const routes = [
   { path: '/', name: 'Home', component: HomeView },
   { path: '/register', name: 'Register', component: RegisterView },
@@ -50,6 +58,13 @@ const routes = [
   { path: '/staff/dashboard', name: 'StaffDashboard', component: StaffDashboard },
   { path: '/staff/treks', name: 'StaffTrekList', component: StaffTrekList },
   { path: '/staff/treks/:id', name: 'StaffTrekDetail', component: StaffTrekDetail },
+
+  { path: '/trekker/dashboard', name: 'TrekkerDashboard', component: TrekkerDashboard },
+  { path: '/trekker/treks', name: 'TrekkerTrekList', component: TrekkerTrekList },
+  { path: '/trekker/treks/:id', name: 'TrekkerTrekDetail', component: TrekkerTrekDetail },
+  { path: '/trekker/bookings', name: 'TrekkerBookings', component: TrekkerBookings },
+  { path: '/trekker/bookings/:id', name: 'TrekkerBookingDetail', component: TrekkerBookingDetail },
+  { path: '/trekker/profile', name: 'TrekkerProfile', component: TrekkerProfile },
 ]
 
 const router = createRouter({
