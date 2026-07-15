@@ -95,13 +95,13 @@ def monthly_reminder():
             db.session.remove()
 
 @celeryApp.task()
-def export_csv(patient_id, email):
+def export_csv(user_id, email):
     import csv
     from datetime import datetime
     app = make_celery_app()
     with app.app_context():
         try:
-            user = User.query.get(patient_id)
+            user = User.query.get(user_id)
             if not user:
                 return
                 
@@ -109,7 +109,7 @@ def export_csv(patient_id, email):
             os.makedirs(exports_dir, exist_ok=True)
             
             timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-            filename = f"trekking_history_{patient_id}_{timestamp}.csv"
+            filename = f"trekking_history_{user_id}_{timestamp}.csv"
             filepath = os.path.join(exports_dir, filename)
             
             if user.role == UserRole.ADMIN:
@@ -156,21 +156,23 @@ def export_csv(patient_id, email):
 
 @celeryApp.task()
 def send_staff_welcome_email(email, password, name):
-    try:
-        subject = "Welcome to the Trekking Management Application Team!"
-        body = f"""
-        <h3>Welcome {name}!</h3>
-        <p>You have been registered as a Staff member on our Trekking Management Application.</p>
-        <p>Here are your login credentials:</p>
-        <ul>
-            <li><strong>Email:</strong> {email}</li>
-            <li><strong>Password:</strong> {password}</li>
-        </ul>
-        <p>Best regards,<br>TMA Admin</p>
-        """
-        send_mail(email, subject, body)
-    finally:
-        db.session.remove()
+    app = make_celery_app()
+    with app.app_context():
+        try:
+            subject = "Welcome to the Trekking Management Application Team!"
+            body = f"""
+            <h3>Welcome {name}!</h3>
+            <p>You have been registered as a Staff member on our Trekking Management Application.</p>
+            <p>Here are your login credentials:</p>
+            <ul>
+                <li><strong>Email:</strong> {email}</li>
+                <li><strong>Password:</strong> {password}</li>
+            </ul>
+            <p>Best regards,<br>TMA Admin</p>
+            """
+            send_mail(email, subject, body)
+        finally:
+            db.session.remove()
 
 celeryApp.conf.beat_schedule = {
     'daily_reminders': {
