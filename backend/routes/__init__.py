@@ -7,6 +7,20 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 staff_bp = Blueprint('staff', __name__, url_prefix='/api/staff')
 trekker_bp = Blueprint('trekker', __name__, url_prefix='/api/trekker')
 from .export_routes import export_bp
+from flask_caching import Cache
+
+cache = Cache()
+
+def make_user_cache_key(*args, **kwargs):
+    from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
+    from flask import request
+    try:
+        verify_jwt_in_request(optional=True)
+        user_id = get_jwt_identity()
+    except Exception:
+        user_id = None
+    query_str = "&".join(f"{k}={v}" for k, v in sorted(request.args.items()))
+    return f"{request.path}:{user_id or 'anonymous'}:{query_str}"
 
 CORS(auth_bp)
 CORS(admin_bp)

@@ -3,6 +3,7 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from models.models import db, User, Staff, Trek, Booking, UserRole, UserStatus, TrekStatus, BookingStatus
 from datetime import datetime
+from . import cache, make_user_cache_key
 
 
 def staff():
@@ -18,6 +19,7 @@ def get_current_staff():
 
 class StaffDashboard(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not staff():
             return {'message': 'Unauthorized'}, 403
@@ -60,6 +62,7 @@ class StaffDashboard(Resource):
 
 class StaffTrekList(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not staff():
             return {'message': 'Unauthorized'}, 403
@@ -92,6 +95,7 @@ class StaffTrekList(Resource):
 
 class StaffTrekDetail(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self, trek_id):
         if not staff():
             return {'message': 'Unauthorized'}, 403
@@ -192,6 +196,7 @@ class StaffTrekDetail(Resource):
             return {'message': 'No updatable fields provided'}, 400
 
         db.session.commit()
+        cache.clear()
         return {
             'message'         : 'Trek updated',
             'trek_status'     : trek.trek_status.value,
@@ -203,6 +208,7 @@ class StaffTrekDetail(Resource):
 
 class StaffTrekParticipants(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self, trek_id):
         if not staff():
             return {'message': 'Unauthorized'}, 403
@@ -289,6 +295,7 @@ class StaffBookingStatus(Resource):
             }, 400
 
         db.session.commit()
+        cache.clear()
         return {
             'message'        : 'Booking status updated',
             'booking_status' : booking.booking_status.value,

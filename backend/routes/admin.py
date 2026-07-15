@@ -4,6 +4,7 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt
 from models.models import db, User, Staff, Trekker, Trek, Booking, UserRole, UserStatus, Difficulty, TrekStatus, BookingStatus
 from datetime import datetime
+from . import cache, make_user_cache_key
 
 def admin():
     claims = get_jwt()
@@ -12,6 +13,7 @@ def admin():
 
 class Dashboard(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not admin():
             return {'message' : 'Unauthorized'}, 403
@@ -28,6 +30,7 @@ class Dashboard(Resource):
 
 class StaffList(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not admin():
             return {'message' : 'Unauthorized'}, 403
@@ -73,6 +76,7 @@ class StaffList(Resource):
 
         db.session.add(new_user)
         db.session.commit()
+        cache.clear()
 
         from celery_app import send_staff_welcome_email
         send_staff_welcome_email.delay(data['email'], data['password'], data['full_name'])
@@ -83,6 +87,7 @@ class StaffList(Resource):
 
 class StaffDetail(Resource): 
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self, staff_id):
         if not admin():
             return {'message': 'Unauthorized'}, 403
@@ -134,6 +139,7 @@ class StaffDetail(Resource):
                 return {'message' : 'Invalid flag ....'}, 400
 
         db.session.commit()
+        cache.clear()
         return {'message' : 'Staff updated'} , 200
 
 # ------------------------------------------------------------------------------------------------- 
@@ -149,12 +155,14 @@ class StaffDetail(Resource):
 
         db.session.delete(staff)
         db.session.commit()
+        cache.clear()
         return {'message' : 'Staff deleted'}, 200
 
 # ==================================================================================================
 
 class TrackList(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not admin():
             return {'message' : 'Unauthorized'}, 403
@@ -220,12 +228,14 @@ class TrackList(Resource):
         
         db.session.add(new_trek)
         db.session.commit()
+        cache.clear()
         return {'message' : 'Trek created' , 'id' : new_trek.id}, 201
 
 # ==================================================================================================
 
 class TrackDetail(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self, trek_id):
         if not admin():
             return {'message': 'Unauthorized'}, 403
@@ -316,6 +326,7 @@ class TrackDetail(Resource):
                     trek.trek_status = TrekStatus.APPROVED
 
         db.session.commit()
+        cache.clear()
         return {'message' : 'Trek updated'}, 200
 
 # ------------------------------------------------------------------------------------------------- 
@@ -330,12 +341,14 @@ class TrackDetail(Resource):
 
         db.session.delete(trek)
         db.session.commit()
+        cache.clear()
         return {'message' : 'Trek deleted'}, 200
 
 # ==================================================================================================
 
 class TrekkerList(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not admin():
             return {'message': 'Unauthorized'}, 403
@@ -360,6 +373,7 @@ class TrekkerList(Resource):
 
 class TrekkerDetail(Resource):  
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self, trekker_id):
         if not admin():
             return {'message': 'Unauthorized'}, 403
@@ -410,6 +424,7 @@ class TrekkerDetail(Resource):
             return {'message' : 'Invalid flag....'}, 400
 
         db.session.commit()
+        cache.clear()
         return {'message' : f'User status updated to {user.flag.value}'}, 200
 
 # ------------------------------------------------------------------------------------------------- 
@@ -424,11 +439,13 @@ class TrekkerDetail(Resource):
 
         db.session.delete(user)
         db.session.commit()
+        cache.clear()
         return {'message' : 'User deleted'}, 200
 
 
 class BookingList(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not admin():
             return {'message' : 'Unauthorized'},403
@@ -453,6 +470,7 @@ class BookingList(Resource):
 
 class BookingDetail(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self, booking_id):
         if not admin():
             return {'message' : 'Unauthorized'}, 403
@@ -529,6 +547,7 @@ class BookingDetail(Resource):
             }, 400
 
         db.session.commit()
+        cache.clear()
         return {
             'message': 'Booking status updated by Admin',
             'booking_status': booking.booking_status.value,
@@ -539,6 +558,7 @@ class BookingDetail(Resource):
 
 class Search(Resource):
     @jwt_required()
+    @cache.cached(timeout=300, make_cache_key=make_user_cache_key)
     def get(self):
         if not admin():
             return {'message' : 'Unauthorized'}, 403

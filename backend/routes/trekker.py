@@ -3,6 +3,7 @@ from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt, get_jwt_identity
 from models.models import db, User, Trekker, Trek, Booking, UserRole, UserStatus, Difficulty, Gender, TrekStatus, BookingStatus
 from datetime import datetime
+from . import cache, make_user_cache_key
 
 
 def trekker():
@@ -18,6 +19,7 @@ def get_current_trekker():
 
 class TrekkerDashboard(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not trekker():
             return {'message': 'Unauthorized'}, 403
@@ -69,6 +71,7 @@ class TrekkerDashboard(Resource):
 
 class TrekkerTrekList(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not trekker():
             return {'message': 'Unauthorized'}, 403
@@ -115,6 +118,7 @@ class TrekkerTrekList(Resource):
 
 class TrekkerTrekDetail(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self, trek_id):
         if not trekker():
             return {'message': 'Unauthorized'}, 403
@@ -181,6 +185,7 @@ class TrekkerBooking(Resource):
                 existing.booking_date = datetime.utcnow()
                 trek.available_slot -= 1
                 db.session.commit()
+                cache.clear()
                 return {
                     'message'        : 'Booking re-confirmed',
                     'booking_id'     : existing.id,
@@ -195,6 +200,7 @@ class TrekkerBooking(Resource):
         db.session.add(new_booking)
         trek.available_slot -= 1
         db.session.commit()
+        cache.clear()
 
         return {
             'message'        : 'Booking confirmed',
@@ -208,6 +214,7 @@ class TrekkerBooking(Resource):
 
 class TrekkerBookingList(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not trekker():
             return {'message': 'Unauthorized'}, 403
@@ -238,6 +245,7 @@ class TrekkerBookingList(Resource):
 
 class TrekkerBookingDetail(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self, booking_id):
         if not trekker():
             return {'message': 'Unauthorized'}, 403
@@ -298,6 +306,7 @@ class TrekkerBookingDetail(Resource):
             trek.available_slot += 1
 
         db.session.commit()
+        cache.clear()
         return {
             'message'        : 'Booking cancelled',
             'booking_status' : booking.booking_status.value,
@@ -319,12 +328,14 @@ class TrekkerBookingDetail(Resource):
 
         booking.deleted_by_trekker = True
         db.session.commit()
+        cache.clear()
         return {'message': 'Booking deleted'}, 200
 
 # ==================================================================================================
 
 class TrekkerProfile(Resource):
     @jwt_required()
+    @cache.cached(timeout=1800, make_cache_key=make_user_cache_key)
     def get(self):
         if not trekker():
             return {'message': 'Unauthorized'}, 403
@@ -374,4 +385,5 @@ class TrekkerProfile(Resource):
                 return {'message': 'Invalid gender'}, 400
 
         db.session.commit()
+        cache.clear()
         return {'message': 'Profile updated'}, 200
