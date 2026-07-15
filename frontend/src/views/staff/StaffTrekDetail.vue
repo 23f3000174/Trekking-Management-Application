@@ -6,7 +6,7 @@
     </button>
 
     <div v-if="loading" class="loading">Loading trek details...</div>
-    <p v-if="error" class="error-msg">{{ error }}</p>
+    <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else class="content">
 
@@ -135,17 +135,38 @@
                 </span>
               </td>
               <td>
-                <select
-                  v-model="statusDrafts[p.booking_id]"
-                  class="status-select"
-                  @change="onStatusChange(p)"
-                  :disabled="statusLoading === p.booking_id"
-                >
-                  <option value="">Update…</option>
-                  <option value="booked">Mark Booked</option>
-                  <option value="completed">Mark Completed</option>
-                  <option value="cancelled">Cancel Booking</option>
-                </select>
+                <span v-if="p.booking_status === 'cancelled' && p.cancelled_by === 'trekker'" class="text-muted">
+                  Cancelled by trekker
+                </span>
+                <span v-else-if="p.booking_status === 'completed'" class="text-muted">
+                  —
+                </span>
+                <div v-else-if="p.booking_status === 'booked'" class="action-buttons-inline">
+                  <button 
+                    class="btn-success-sm" 
+                    @click="updateBookingStatus(p, 'completed')"
+                    :disabled="statusLoading === p.booking_id"
+                  >
+                    Complete
+                  </button>
+                  <button 
+                    class="btn-danger-sm" 
+                    @click="updateBookingStatus(p, 'cancelled')"
+                    :disabled="statusLoading === p.booking_id"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div v-else-if="p.booking_status === 'cancelled'" class="action-buttons-inline">
+                  <button 
+                    class="btn-success-sm" 
+                    @click="updateBookingStatus(p, 'booked')"
+                    :disabled="statusLoading === p.booking_id"
+                  >
+                    Rebook
+                  </button>
+                  <span class="text-muted"> (Cancelled by {{ p.cancelled_by || 'staff' }})</span>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -236,14 +257,6 @@ export default {
       }
     },
 
-    onStatusChange(participant) {
-      const newStatus = this.statusDrafts[participant.booking_id]
-      if (!newStatus || newStatus === participant.booking_status) {
-        return
-      }
-      this.updateBookingStatus(participant, newStatus)
-    },
-
     async updateBookingStatus(participant, newStatus) {
       this.statusLoading = participant.booking_id
       try {
@@ -251,13 +264,12 @@ export default {
           booking_status: newStatus,
         })
         participant.booking_status = res.data.booking_status
+        participant.cancelled_by = res.data.cancelled_by
         if (res.data.available_slot !== undefined) {
           this.trek.available_slot = res.data.available_slot
         }
-        this.statusDrafts[participant.booking_id] = ''
       } catch (e) {
         this.error = e.response?.data?.message || 'Failed to update booking status'
-        this.statusDrafts[participant.booking_id] = ''
         setTimeout(() => { this.error = '' }, 3000)
       } finally {
         this.statusLoading = null
@@ -590,5 +602,48 @@ button:disabled {
   text-align: center;
   padding: 40px;
   color: #7f8c8d;
+}
+
+.action-buttons-inline {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-success-sm {
+  background: #2ecc71;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-success-sm:hover {
+  background: #27ae60;
+}
+
+.btn-danger-sm {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.btn-danger-sm:hover {
+  background: #c0392b;
+}
+
+.text-muted {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+  font-style: italic;
 }
 </style>

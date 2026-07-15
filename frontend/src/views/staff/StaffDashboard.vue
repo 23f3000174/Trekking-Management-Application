@@ -8,7 +8,7 @@
     </div>
 
     <div v-if="loading" class="loading">Loading dashboard...</div>
-    <p v-if="error" class="error-msg">{{ error }}</p>
+    <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else class="content">
       <div class="stat-cards">

@@ -12,7 +12,6 @@ class UserRole(enum.Enum):
 
 class UserStatus(enum.Enum):
     ACTIVE = 'active'
-    INACTIVE = 'inactive'
     BLACKLISTED = 'blacklisted'
 
 class Gender(enum.Enum):
@@ -136,6 +135,8 @@ class Booking(db.Model):
     booking_status = db.Column(db.Enum(BookingStatus), nullable=False, default=BookingStatus.BOOKED)
     
     cancellation_date = db.Column(db.DateTime, default=None)
+    deleted_by_trekker = db.Column(db.Boolean, default=False, nullable=False)
+    cancelled_by = db.Column(db.String(20), default=None)
 
     user = db.relationship('User',
                            back_populates='bookings',

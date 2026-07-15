@@ -37,7 +37,7 @@ def create_admin():
                 mobile_no = "xxx",
                 role = UserRole.ADMIN
                 )
-        admin_user.set_password('admin@123')
+        admin_user.set_password('admin@admin.com')
         db.session.add(admin_user)
         db.session.commit()
 

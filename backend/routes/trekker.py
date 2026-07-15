@@ -124,7 +124,7 @@ class TrekkerTrekDetail(Resource):
             return {'message': 'Trek not found'}, 404
 
         current = get_current_trekker()
-        my_booking = Booking.query.filter_by(user_id=current.id, trek_id=trek.id).first()
+        my_booking = Booking.query.filter_by(user_id=current.id, trek_id=trek.id, deleted_by_trekker=False).first()
 
         assigned_staff = None
         if trek.staff:
@@ -173,7 +173,23 @@ class TrekkerBooking(Resource):
 
         existing = Booking.query.filter_by(user_id=current.id, trek_id=trek.id).first()
         if existing:
-            return {'message': 'You have already booked this trek'}, 409
+            if existing.deleted_by_trekker or existing.booking_status == BookingStatus.CANCELLED:
+                existing.booking_status = BookingStatus.BOOKED
+                existing.deleted_by_trekker = False
+                existing.cancellation_date = None
+                existing.cancelled_by = None
+                existing.booking_date = datetime.utcnow()
+                trek.available_slot -= 1
+                db.session.commit()
+                return {
+                    'message'        : 'Booking re-confirmed',
+                    'booking_id'     : existing.id,
+                    'trek_name'      : trek.trek_name,
+                    'booking_status' : existing.booking_status.value,
+                    'available_slot' : trek.available_slot,
+                }, 200
+            else:
+                return {'message': 'You have already booked this trek'}, 409
 
         new_booking = Booking(user_id=current.id, trek_id=trek.id)
         db.session.add(new_booking)
@@ -200,7 +216,7 @@ class TrekkerBookingList(Resource):
         if not current:
             return {'message': 'Trekker profile not found'}, 404
 
-        bookings = current.user.bookings.all()
+        bookings = current.user.bookings.filter_by(deleted_by_trekker=False).all()
         result = []
         for b in bookings:
             result.append({
@@ -228,7 +244,7 @@ class TrekkerBookingDetail(Resource):
 
         current = get_current_trekker()
         booking = Booking.query.get(booking_id)
-        if not booking:
+        if not booking or booking.deleted_by_trekker:
             return {'message': 'Booking not found'}, 404
 
         if booking.user_id != current.id:
@@ -258,7 +274,7 @@ class TrekkerBookingDetail(Resource):
 
         current = get_current_trekker()
         booking = Booking.query.get(booking_id)
-        if not booking:
+        if not booking or booking.deleted_by_trekker:
             return {'message': 'Booking not found'}, 404
 
         if booking.user_id != current.id:
@@ -276,6 +292,7 @@ class TrekkerBookingDetail(Resource):
 
         booking.booking_status = BookingStatus.CANCELLED
         booking.cancellation_date = datetime.utcnow()
+        booking.cancelled_by = 'trekker'
         trek = booking.trek
         if trek.available_slot < trek.total_slot:
             trek.available_slot += 1
@@ -294,13 +311,13 @@ class TrekkerBookingDetail(Resource):
 
         current = get_current_trekker()
         booking = Booking.query.get(booking_id)
-        if not booking:
+        if not booking or booking.deleted_by_trekker:
             return {'message': 'Booking not found'}, 404
 
         if booking.user_id != current.id:
             return {'message': 'You can only delete your own bookings'}, 403
 
-        db.session.delete(booking)
+        booking.deleted_by_trekker = True
         db.session.commit()
         return {'message': 'Booking deleted'}, 200
 

@@ -2,7 +2,7 @@ from flask import request
 # pyrefly: ignore [missing-import]
 from flask_restful import Resource
 from flask_jwt_extended import jwt_required, get_jwt
-from models.models import db, User, Staff, Trekker, Trek, Booking, UserRole, UserStatus, Difficulty, TrekStatus 
+from models.models import db, User, Staff, Trekker, Trek, Booking, UserRole, UserStatus, Difficulty, TrekStatus, BookingStatus
 from datetime import datetime
 
 def admin():
@@ -194,6 +194,9 @@ class TrackList(Resource):
         except ValueError:
             return {'message' : 'Invalid date format'}, 400
             
+        if start < datetime.utcnow().date():
+            return {'message' : 'trek start date cannot be in the past'}, 400
+            
         if end <= start:
             return {'message' : 'end_date must be after start_date'}, 400
             
@@ -269,7 +272,20 @@ class TrackDetail(Resource):
         if 'description' in data:
             trek.description = data['description']
         if 'total_slot' in data:
-            trek.total_slot = data['total_slot']
+            new_total = data['total_slot']
+            if new_total < 0:
+                return {'message': 'total_slot must be a non-negative integer'}, 400
+
+            booked_count = trek.bookings.filter(
+                Booking.booking_status == BookingStatus.BOOKED
+            ).count()
+            if new_total < booked_count:
+                return {
+                    'message': f'total_slot cannot be less than booked count ({booked_count})'
+                }, 400
+
+            trek.total_slot = new_total
+            trek.available_slot = new_total - booked_count
         
         if 'difficulty' in data:
             try:
@@ -399,7 +415,7 @@ class TrekkerDetail(Resource):
             return {'message': 'Unauthorized'}, 403
 
         user = User.query.get(trekker_id)
-        if not user:
+        if not user or user.role != UserRole.TREKKER:
             return {'message' : 'User not found'}, 404
 
         db.session.delete(user)
@@ -425,7 +441,8 @@ class BookingList(Resource):
                 'trek_location' : b.trek.trek_location,
                 'booking_date' : str(b.booking_date),
                 'booking_status' : b.booking_status.value,
-                'cancellation_date' : str(b.cancellation_date) 
+                'cancellation_date' : str(b.cancellation_date),
+                'cancelled_by' : b.cancelled_by
             })
         return result, 200
 
@@ -444,7 +461,8 @@ class BookingDetail(Resource):
                 'booking_id'        : booking.id,
                 'booking_date'      : str(booking.booking_date),
                 'booking_status'    : booking.booking_status.value,
-                'cancellation_date' : str(booking.cancellation_date) ,
+                'cancellation_date' : str(booking.cancellation_date) if booking.cancellation_date else None,
+                'cancelled_by'      : booking.cancelled_by,
                 'user': {
                     'id' : booking.user.id,
                     'full_name' : booking.user.full_name,
@@ -459,6 +477,60 @@ class BookingDetail(Resource):
                     'trek_status'  : booking.trek.trek_status.value,
                     },
                 }, 200
+
+    @jwt_required()
+    def put(self, booking_id):
+        if not admin():
+            return {'message': 'Unauthorized'}, 403
+
+        booking = Booking.query.get(booking_id)
+        if not booking:
+            return {'message': 'Booking not found'}, 404
+
+        data = request.get_json()
+        if 'booking_status' not in data:
+            return {'message': 'Provide booking_status'}, 400
+
+        try:
+            new_status = BookingStatus(data['booking_status'])
+        except ValueError:
+            return {'message': 'Invalid booking_status'}, 400
+
+        old_status = booking.booking_status
+        now = datetime.utcnow()
+        trek = booking.trek
+
+        if new_status == BookingStatus.CANCELLED and old_status != BookingStatus.CANCELLED:
+            booking.cancellation_date = now
+            booking.booking_status = BookingStatus.CANCELLED
+            booking.cancelled_by = 'admin'
+            if trek.available_slot < trek.total_slot:
+                trek.available_slot += 1
+
+        elif new_status == BookingStatus.COMPLETED and old_status == BookingStatus.BOOKED:
+            booking.booking_status = BookingStatus.COMPLETED
+            booking.cancelled_by = None
+
+        elif new_status == BookingStatus.BOOKED and old_status == BookingStatus.CANCELLED:
+            if trek.available_slot <= 0:
+                return {'message': 'No slots available to rebook'}, 400
+            booking.cancellation_date = None
+            booking.booking_status = BookingStatus.BOOKED
+            booking.cancelled_by = None
+            trek.available_slot -= 1
+
+        else:
+            return {
+                'message': f'Invalid transition from {old_status.value} to {new_status.value}'
+            }, 400
+
+        db.session.commit()
+        return {
+            'message': 'Booking status updated by Admin',
+            'booking_status': booking.booking_status.value,
+            'available_slot': trek.available_slot,
+            'cancelled_by': booking.cancelled_by
+        }, 200
 
 
 class Search(Resource):

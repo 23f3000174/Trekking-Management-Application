@@ -52,24 +52,24 @@
         </div>
 
         <div class="card-actions">
-          <p v-if="trek.my_booking" class="already-booked">
+          <p v-if="trek.my_booking && trek.my_booking !== 'cancelled'" class="already-booked">
             Your booking status:
             <span class="badge" :class="'badge-' + trek.my_booking">{{ trek.my_booking }}</span>
           </p>
 
           <button
-            v-else-if="trek.trek_status === 'open' && trek.available_slot > 0"
+            v-if="(!trek.my_booking || trek.my_booking === 'cancelled') && trek.trek_status === 'open' && trek.available_slot > 0"
             class="btn-primary"
             @click="bookTrek"
             :disabled="actionLoading"
           >
-            {{ actionLoading ? 'Booking...' : 'Book This Trek' }}
+            {{ actionLoading ? 'Booking...' : (trek.my_booking === 'cancelled' ? 'Book Again' : 'Book This Trek') }}
           </button>
 
-          <p v-else-if="trek.my_booking === null && trek.trek_status !== 'open'" class="hint">
+          <p v-if="(!trek.my_booking || trek.my_booking === 'cancelled') && trek.trek_status !== 'open'" class="hint">
             This trek is not currently open for booking.
           </p>
-          <p v-else-if="trek.available_slot <= 0" class="hint">
+          <p v-else-if="(!trek.my_booking || trek.my_booking === 'cancelled') && trek.available_slot <= 0" class="hint">
             Sorry, this trek is fully booked.
           </p>
         </div>

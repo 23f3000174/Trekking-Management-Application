@@ -12,7 +12,7 @@
     </div>
 
     <div v-if="loading" class="loading">Loading staff...</div>
-    <p v-if="error" class="error-msg">{{ error }}</p>
+    <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else>
       <div v-if="staff.length === 0" class="empty-state">

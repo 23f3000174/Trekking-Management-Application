@@ -1,12 +1,12 @@
 <template>
   <div class="page">
 
-    <button class="btn-primary" @click="$router.push('admin/staff')">
+    <button class="btn-primary" @click="$router.push('/admin/staff')">
       ← Back to Staff List
     </button>
 
     <div v-if="loading" class="loading">Loading staff details...</div>
-    <p v-if="error" class="error-msg">{{ error }}</p>
+    <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else class="content">
       <div class="card profile-card">
@@ -18,7 +18,6 @@
 
             <span class="badge" :class="{
               'badge-active': staff.flag === 'active',
-              'badge-inactive': staff.flag === 'inactive',
               'badge-blacklisted': staff.flag === 'blacklisted'
             }">
               {{ staff.flag }}
@@ -73,7 +72,6 @@
           <label>Account Flag</label>
           <select v-model="editForm.flag">
             <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
             <option value="blacklisted">Blacklisted</option>
           </select>
         </div>
@@ -365,11 +363,6 @@ export default {
 .badge-active {
   background: #d4edda;
   color: #155724;
-}
-
-.badge-inactive {
-  background: #fff3cd;
-  color: #856404;
 }
 
 .badge-blacklisted {

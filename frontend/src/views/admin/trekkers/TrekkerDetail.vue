@@ -6,7 +6,7 @@
     </button>
 
     <div v-if="loading" class="loading">Loading trekker details...</div>
-    <p v-if="error" class="error-msg">{{ error }}</p>
+    <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else class="content">
 
@@ -18,7 +18,6 @@
             <p class="email">{{ trekker.email }}</p>
             <span class="badge" :class="{
               'badge-active': trekker.flag === 'active',
-              'badge-inactive': trekker.flag === 'inactive',
               'badge-blacklisted': trekker.flag === 'blacklisted'
             }">
               {{ trekker.flag }}
@@ -337,11 +336,6 @@ export default {
 .badge-active {
   background: #d4edda;
   color: #155724;
-}
-
-.badge-inactive {
-  background: #fff3cd;
-  color: #856404;
 }
 
 .badge-blacklisted {

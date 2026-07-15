@@ -6,7 +6,7 @@
     </button>
 
     <div v-if="loading" class="loading">Loading booking...</div>
-    <p v-if="error" class="error-msg">{{ error }}</p>
+    <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else class="content">
 
@@ -69,6 +69,25 @@
         </div>
 
       </div>
+
+      <div class="card actions-card">
+        <h3>⚡ Booking Actions</h3>
+        <div class="action-buttons">
+          <button v-if="booking.booking_status === 'booked'" class="btn-danger" @click="updateBookingStatus('cancelled')" :disabled="actionLoading">
+            Cancel Booking
+          </button>
+          <button v-if="booking.booking_status === 'booked'" class="btn-primary" @click="updateBookingStatus('completed')" :disabled="actionLoading">
+            Mark Completed
+          </button>
+          <button v-if="booking.booking_status === 'cancelled'" class="btn-success" @click="updateBookingStatus('booked')" :disabled="actionLoading">
+            Rebook Booking
+          </button>
+          <span v-if="actionLoading" class="loading-inline">Updating...</span>
+        </div>
+        <p v-if="actionSuccess" class="success-msg">{{ actionSuccess }}</p>
+        <p v-if="actionError" class="error-msg">{{ actionError }}</p>
+      </div>
+
     </div>
   </div>
 </template>
@@ -84,6 +103,9 @@ export default {
       booking: {},
       loading: true,
       error: '',
+      actionLoading: false,
+      actionSuccess: '',
+      actionError: '',
     }
   },
 
@@ -106,6 +128,30 @@ export default {
         year: 'numeric', month: 'short', day: 'numeric'
       })
     },
+
+    async updateBookingStatus(newStatus) {
+      this.actionLoading = true
+      this.actionSuccess = ''
+      this.actionError = ''
+      try {
+        const id = this.$route.params.id
+        const res = await api.put(`/admin/bookings/${id}`, { booking_status: newStatus })
+        this.actionSuccess = res.data.message
+        this.booking.booking_status = res.data.booking_status
+        if (res.data.available_slot !== undefined && this.booking.trek) {
+          this.booking.trek.available_slot = res.data.available_slot
+        }
+        if (newStatus === 'cancelled') {
+          this.booking.cancellation_date = new Date().toISOString()
+        } else {
+          this.booking.cancellation_date = null
+        }
+      } catch (e) {
+        this.actionError = e.response?.data?.message || 'Failed to update booking'
+      } finally {
+        this.actionLoading = false
+      }
+    }
   },
 }
 </script>
@@ -278,5 +324,75 @@ export default {
   padding: 10px 16px;
   border-radius: 6px;
   border-left: 4px solid #e74c3c;
+}
+
+.actions-card {
+  margin-top: 20px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-danger {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+.btn-success {
+  background: #2ecc71;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.btn-success:hover {
+  background: #27ae60;
+}
+
+.btn-primary {
+  background: #2c3e50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #34495e;
+}
+
+.success-msg {
+  color: #155724;
+  background: #d4edda;
+  padding: 8px 14px;
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 0.9rem;
+}
+
+.loading-inline {
+  color: #7f8c8d;
+  font-size: 0.9rem;
 }
 </style>

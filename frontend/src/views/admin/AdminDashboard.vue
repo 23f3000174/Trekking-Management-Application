@@ -7,7 +7,7 @@
 
     <div v-if="loading" class="loading">Loading Dashboard...</div>
 
-    <p v-if="error" class="error-msg">{{ error }}</p>
+    <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else class="stats-grid">
       <div v-for="card in statCards" :key="card.label" class="stat-card" @click="$router.push(card.route)">
@@ -20,7 +20,7 @@
       </div>
     </div>
 
-    <div v-if="!loading" class="quick-action">
+    <div v-if="!loading && !error" class="quick-action">
       <h2>Quick Action</h2>
       <div class="action-buttons">
         <button @click="$router.push('/admin/staff/create')" class="btn-primary">

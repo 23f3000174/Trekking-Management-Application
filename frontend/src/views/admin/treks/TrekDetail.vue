@@ -6,7 +6,7 @@
     </button>
 
     <div v-if="loading" class="loading">Loading trek details...</div>
-    <p v-if="error" class="error-msg">{{ error }}</p>
+    <p v-else-if="error" class="error-msg">{{ error }}</p>
 
     <div v-else class="content">
 

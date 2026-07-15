@@ -19,9 +19,9 @@
 
     <div v-if="loading" class="loading">Searching ...</div>
 
-    <p v-if="error" class="error-msg">{{ error }}</p>
+    <p v-else-if="error" class="error-msg">{{ error }}</p>
 
-    <div v-if="hasResults" class="results">
+    <div v-else-if="hasResults" class="results">
       <div v-if="results.treks && results.treks.length > 0" class="result-section">
         <h3 class="section-title">🏔️ Treks ({{ results.treks.length }})</h3>
         <div v-for="trek in results.treks" :key="'trek-' + trek.id" class="result-card"

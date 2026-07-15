@@ -119,6 +119,7 @@ class StaffTrekDetail(Resource):
                 'booking_date'    : str(b.booking_date),
                 'booking_status'  : b.booking_status.value,
                 'cancellation_date': str(b.cancellation_date) if b.cancellation_date else None,
+                'cancelled_by'    : b.cancelled_by,
             })
 
         return {
@@ -225,6 +226,7 @@ class StaffTrekParticipants(Resource):
                 'booking_date'     : str(b.booking_date),
                 'booking_status'   : b.booking_status.value,
                 'cancellation_date': str(b.cancellation_date) if b.cancellation_date else None,
+                'cancelled_by'     : b.cancelled_by,
             })
 
         return {
@@ -266,17 +268,19 @@ class StaffBookingStatus(Resource):
         if new_status == BookingStatus.CANCELLED and old_status != BookingStatus.CANCELLED:
             booking.cancellation_date = now
             booking.booking_status = BookingStatus.CANCELLED
-            if trek.available_slot < trek.total_slot:
-                trek.available_slot += 1
+            booking.cancelled_by = 'staff'
+            trek.available_slot += 1
 
         elif new_status == BookingStatus.COMPLETED and old_status == BookingStatus.BOOKED:
             booking.booking_status = BookingStatus.COMPLETED
+            booking.cancelled_by = None
 
         elif new_status == BookingStatus.BOOKED and old_status == BookingStatus.CANCELLED:
             if trek.available_slot <= 0:
                 return {'message': 'No slots available to rebook'}, 400
             booking.cancellation_date = None
             booking.booking_status = BookingStatus.BOOKED
+            booking.cancelled_by = None
             trek.available_slot -= 1
 
         else:
@@ -289,4 +293,5 @@ class StaffBookingStatus(Resource):
             'message'        : 'Booking status updated',
             'booking_status' : booking.booking_status.value,
             'available_slot' : trek.available_slot,
+            'cancelled_by'   : booking.cancelled_by,
         }, 200
