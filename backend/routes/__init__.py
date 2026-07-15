@@ -6,11 +6,13 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
 staff_bp = Blueprint('staff', __name__, url_prefix='/api/staff')
 trekker_bp = Blueprint('trekker', __name__, url_prefix='/api/trekker')
+from .export_routes import export_bp
 
 CORS(auth_bp)
 CORS(admin_bp)
 CORS(staff_bp)
 CORS(trekker_bp)
+CORS(export_bp)
 
 auth_api = Api(auth_bp)
 admin_api = Api(admin_bp)

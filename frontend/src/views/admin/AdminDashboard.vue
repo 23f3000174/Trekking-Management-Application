@@ -20,6 +20,10 @@
       </div>
     </div>
 
+    <div v-if="exportMessage" class="success-msg" style="margin-bottom: 20px;">
+      {{ exportMessage }}
+    </div>
+
     <div v-if="!loading && !error" class="quick-action">
       <h2>Quick Action</h2>
       <div class="action-buttons">
@@ -30,7 +34,10 @@
           + Add Trek
         </button>
         <button @click="$router.push('/admin/search')" class="btn-secondary">
-          + Search
+          Search
+        </button>
+        <button @click="triggerExport" :disabled="exportLoading" class="btn-secondary">
+          {{ exportLoading ? 'Exporting...' : 'Export History (CSV)' }}
         </button>
       </div>
     </div>
@@ -49,6 +56,8 @@ export default {
       stats: {},
       loading: true,
       error: '',
+      exportLoading: false,
+      exportMessage: '',
     }
   },
 
@@ -99,6 +108,21 @@ export default {
       this.loading = false
     }
   },
+
+  methods: {
+    async triggerExport() {
+      this.exportLoading = true
+      this.exportMessage = ''
+      try {
+        const res = await api.post('/exports/trigger')
+        this.exportMessage = res.data.message
+      } catch (e) {
+        alert(e.response?.data?.message || 'Failed to trigger export')
+      } finally {
+        this.exportLoading = false
+      }
+    }
+  }
 }
 </script>
 

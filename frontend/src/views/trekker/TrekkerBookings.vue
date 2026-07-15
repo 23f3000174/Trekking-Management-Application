@@ -5,9 +5,18 @@
         <h1>My Bookings</h1>
         <p class="subtitle">Your trekking history</p>
       </div>
-      <button class="btn-secondary" @click="$router.push('/trekker/treks')">
-        Browse Treks
-      </button>
+      <div class="header-actions">
+        <button class="btn-primary" @click="triggerExport" :disabled="exportLoading" style="margin-right: 10px;">
+          {{ exportLoading ? 'Exporting...' : 'Export CSV' }}
+        </button>
+        <button class="btn-secondary" @click="$router.push('/trekker/treks')">
+          Browse Treks
+        </button>
+      </div>
+    </div>
+
+    <div v-if="exportMessage" class="success-msg" style="margin-bottom: 15px;">
+      {{ exportMessage }}
     </div>
 
     <div v-if="loading" class="loading">Loading bookings...</div>
@@ -67,6 +76,8 @@ export default {
       bookings: [],
       loading: true,
       error: '',
+      exportLoading: false,
+      exportMessage: '',
     }
   },
 
@@ -89,6 +100,19 @@ export default {
         month: 'short',
         day: 'numeric',
       })
+    },
+
+    async triggerExport() {
+      this.exportLoading = true
+      this.exportMessage = ''
+      try {
+        const res = await api.post('/exports/trigger')
+        this.exportMessage = res.data.message
+      } catch (e) {
+        alert(e.response?.data?.message || 'Failed to trigger export')
+      } finally {
+        this.exportLoading = false
+      }
     },
   },
 }

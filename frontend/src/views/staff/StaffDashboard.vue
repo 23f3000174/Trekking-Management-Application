@@ -5,6 +5,13 @@
         <h1>Staff Dashboard</h1>
         <p class="subtitle">Welcome, {{ profile.full_name }}</p>
       </div>
+      <button class="btn-primary" @click="triggerExport" :disabled="exportLoading">
+        {{ exportLoading ? 'Exporting...' : 'Export CSV' }}
+      </button>
+    </div>
+
+    <div v-if="exportMessage" class="success-msg" style="margin-bottom: 20px;">
+      {{ exportMessage }}
     </div>
 
     <div v-if="loading" class="loading">Loading dashboard...</div>
@@ -81,6 +88,8 @@ export default {
       profile: {},
       loading: true,
       error: '',
+      exportLoading: false,
+      exportMessage: '',
     }
   },
 
@@ -110,6 +119,19 @@ export default {
         month: 'short',
         day: 'numeric',
       })
+    },
+
+    async triggerExport() {
+      this.exportLoading = true
+      this.exportMessage = ''
+      try {
+        const res = await api.post('/exports/trigger')
+        this.exportMessage = res.data.message
+      } catch (e) {
+        alert(e.response?.data?.message || 'Failed to trigger export')
+      } finally {
+        this.exportLoading = false
+      }
     },
   },
 }

@@ -1,6 +1,6 @@
 from flask import Flask
 from models.models import db, UserRole, User
-from routes import auth_bp, admin_bp, staff_bp, trekker_bp
+from routes import auth_bp, admin_bp, staff_bp, trekker_bp, export_bp
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 
@@ -11,7 +11,10 @@ def create_app():
     CORS(app)
 
 
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///tma.db"
+    import os
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(backend_dir, "tma.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
     app.config['SECRET_KEY'] = 'phull_sequrity'
     db.init_app(app)
     
@@ -22,6 +25,7 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(staff_bp)
     app.register_blueprint(trekker_bp)
+    app.register_blueprint(export_bp)
 
     with app.app_context():
         db.create_all()

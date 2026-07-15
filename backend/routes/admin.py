@@ -73,6 +73,10 @@ class StaffList(Resource):
 
         db.session.add(new_user)
         db.session.commit()
+
+        from celery_app import send_staff_welcome_email
+        send_staff_welcome_email.delay(data['email'], data['password'], data['full_name'])
+
         return {'message' : 'Staff added successfully', 'id' : new_user.id}, 200
 
 # ==================================================================================================
